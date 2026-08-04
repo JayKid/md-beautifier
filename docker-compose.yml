@@ -1,0 +1,20 @@
+services:
+  md-beautifier:
+    build: .
+    container_name: md-beautifier
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3010}:3010"
+    environment:
+      PORT: 3010
+      HOST: 0.0.0.0
+      MCP_TRANSPORT: http
+      # Set this to enable bearer-token auth on the MCP endpoint, e.g.
+      # MCP_API_TOKEN: change-me
+    env_file:
+      - path: .env
+        required: false
+    # Not needed for LAN-only use; uncomment if the container must reach
+    # other compose services on the internal network.
+    # networks:
+    #   - default

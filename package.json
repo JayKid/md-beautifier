@@ -1,0 +1,20 @@
+{
+  "name": "md-beautifier",
+  "version": "1.0.0",
+  "description": "MCP server that renders raw markdown into a self-contained, prettified HTML document",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "express": "^4.21.2",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.0"
+  }
+}
