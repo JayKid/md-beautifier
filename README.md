@@ -14,7 +14,7 @@ Packaged as a single Node.js container, run with Docker Compose.
 | **Name** | `render_markdown_to_html` |
 | **Transport** | MCP **Streamable HTTP** at `http://<host>:3010/mcp` (stdio mode also supported) |
 | **Input** | `markdown` (required), `title`, `subtitle` (optional) |
-| **Output** | Full HTML document as a text string |
+| **Output** | A URL (`${MCP_PUBLIC_BASE_URL}/files/<uuid>.html`) to the saved, self-contained HTML document |
 
 Example of how an agent calls it:
 
@@ -58,6 +58,19 @@ default transport.
 5. Save, then enable the tool for a model and make sure **function calling** is on
    for that model so the agent can invoke it.
 
+## File serving
+
+Each tool call **persists** the rendered document as `<DATA_DIR>/<uuid>.html` and
+the tool response is a link to it: `GET /files/<uuid>.html`. The app applies **no
+authentication** — put it behind a reverse proxy that enforces access (e.g. an nginx
+IP allowlist for LAN + VPN) and use `https://` in the public base URL.
+
+Persisted files expire: anything older than `FILE_TTL_HOURS` is unlinked at startup
+and on a recurring sweep. If the files must survive container recreation, mount a
+persistent volume at `MD_BEAUTIFIER_DATA_DIR` (e.g. `- beautifier-files:/app/data`).
+
+Without `MCP_PUBLIC_BASE_URL` the tool falls back to returning the raw HTML string.
+
 ## Configuration
 
 | Variable | Default | Purpose |
@@ -66,6 +79,9 @@ default transport.
 | `HOST` | `0.0.0.0` | Bind address |
 | `MCP_TRANSPORT` | `http` | `http` (Streamable HTTP) or `stdio` |
 | `MCP_API_TOKEN` | *(empty)* | If set, requests must carry `Authorization: Bearer <token>` |
+| `MCP_PUBLIC_BASE_URL` | *(empty)* | Base URL embedded in returned links, e.g. `https://beautifier.example.com` |
+| `MD_BEAUTIFIER_DATA_DIR` | `/app/data` | Where rendered documents are stored (mount a volume here) |
+| `FILE_TTL_HOURS` | `1` | Documents older than this are deleted (fractions allowed) |
 
 ### stdio mode (for other clients)
 
@@ -109,9 +125,10 @@ npm start       # run locally on :3010
 ├── docker-compose.yml    # runs the service, maps :3010
 ├── Dockerfile            # node:22-alpine
 ├── src/
-│   ├── server.js         # entry: HTTP/stdio transport + wiring
-│   ├── mcp.js            # MCP server + tool definition
+│   ├── server.js         # entry: HTTP/stdio transport + /files serving + TTL sweep
+│   ├── mcp.js            # MCP server + tool definition (returns file links)
 │   ├── renderer.js       # markdown-it + highlight.js
-│   └── styles.js         # embedded CSS template
-└── test/renderer.test.js
+│   ├── styles.js         # embedded CSS template
+│   └── storage.js        # data dir, file persistence, TTL expiry sweep
+└── test/                 # renderer.test.js, storage.test.js
 ```

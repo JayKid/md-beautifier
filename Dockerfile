@@ -11,7 +11,7 @@ ENV NODE_ENV=production
 ENV PORT=3010
 ENV HOST=0.0.0.0
 ENV MCP_TRANSPORT=http
-
+RUN mkdir -p /app/data   # pre-created so a fresh named volume inherits this dir
 EXPOSE 3010
 
 CMD ["node", "src/server.js"]
